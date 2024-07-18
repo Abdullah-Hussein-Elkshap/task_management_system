@@ -35,13 +35,10 @@ public class TaskService implements TaskServiceImpl {
         try{
             task.setTaskDescription(taskModel.getTaskDescription());
             task.setTaskTitle(taskModel.getTaskTitle());
+
             List<User> users = userRepository.findAll();
-            for(User user : users ){
-                if (users != null && user.getUserId() != null){
-                    users.add(user);
-                task.setAssignedUserList(users);
-                }
-            }
+            task.setAssignedUserList(users);
+
             task.setTaskStatus(taskModel.getTaskStatus());
             task.setCreationDate(taskModel.getCreationDate());
             task.setEstimateTime(taskModel.getEstimateTime());
@@ -65,7 +62,7 @@ public class TaskService implements TaskServiceImpl {
         try {
             Optional<Task> task = taskRepository.findById(taskId);
 
-            if(task != null){
+            if(task.isPresent()){
                 task.map(t -> {
                     t.setEstimateTime(taskModel.getEstimateTime());
                     t.setTaskDescription(taskModel.getTaskDescription());
@@ -74,6 +71,9 @@ public class TaskService implements TaskServiceImpl {
                     taskRepository.save(t);
                     return t;
                 });
+            }
+            else {
+                throw new RuntimeException("Task is not exist");
             }
         }catch (Exception e){
             logger.error(Defines.DATABASE_ERROR_REPLY_MSG+":{}",e);
@@ -95,7 +95,7 @@ public class TaskService implements TaskServiceImpl {
         TaskResponseModel taskResponseModel = new TaskResponseModel();
         PaginationResponseModel paginationResponseModel = new PaginationResponseModel();
         List<Task> tasks ;
-           try {
+
                if(paginationRequestModel.getFilterData() != null){
                     tasks =
                             taskRepository.getAllTasksByFilterData(paginationRequestModel.getFilterData(), paginationRequestModel.getSortBy(), paginationResponseModel.getOrderBy());
@@ -103,11 +103,7 @@ public class TaskService implements TaskServiceImpl {
                else {
                     tasks = taskRepository.findAll();
                }
-               if(tasks != null || !tasks.isEmpty()){
-               paginationResponseModel.setPageId(paginationRequestModel.getPageId());
-               paginationResponseModel.setPageSize(paginationResponseModel.getPageSize());
-               paginationResponseModel.setOrderBy(paginationRequestModel.getOrderBy());
-               paginationResponseModel.setFilterDataResponse(paginationRequestModel.getFilterData());
+
                for(Task task : tasks){
                    taskResponseModel.setTaskId(task.getTaskId());
                    taskResponseModel.setTaskDescription(task.getTaskDescription());
@@ -121,10 +117,7 @@ public class TaskService implements TaskServiceImpl {
                paginationResponseModel.setOrderBy(paginationResponseModel.getOrderBy());
                paginationResponseModel.setFilterDataResponse(paginationRequestModel.getFilterData());
                paginationResponseModel.setResultList(taskResponseModelList);
-               }
-           }catch (Exception e){
 
-           }
            return paginationResponseModel;
     }
 
@@ -132,8 +125,11 @@ public class TaskService implements TaskServiceImpl {
     public BasicResponseModel deleteTask(Integer taskId) {
         try{
             Optional<Task> task = taskRepository.findById(taskId);
-            if(task != null){
+            if(task.isPresent()){
                 taskRepository.delete(task.get());
+            }
+            else {
+                throw new RuntimeException();
             }
         }catch (Exception e){
             logger.error(Defines.DATABASE_ERROR_REPLY_MSG+":{}",e);
